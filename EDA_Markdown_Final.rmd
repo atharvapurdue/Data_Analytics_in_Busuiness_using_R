@@ -1,0 +1,486 @@
+---
+title: "EDA Food Mart"
+output: word_document
+date: "2022-10-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Loading Packages
+```{r}
+library(tidyverse)
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+```
+# About FoodMart:
+Food Mart (CFM) is a chain of convenience stores in the United States. The private company's headquarters are located in Mentor, Ohio, and there are currently approximately 325 stores
+located in the US. Convenient Food Mart operates on the franchise system.
+Food Mart was the nation's third-largest chain of convenience stores as of 1988. The NASDAQ exchange dropped Convenient Food Mart the same year when the company failed to meet financial reporting requirements. Carden & Cherry advertised Convenient Food Mart with the Ernest character in the 1980s.
+
+
+
+# Loading Data
+```{r}
+#Load Data
+CFM_data <- read.csv("C:/Users/bssup/Documents/fall22/R/project/Food_mart/data.csv")
+
+```
+
+# Correlation Matrix
+This will show correlation between different variables.
+Reasons of computing correlation matrix:
+To summarize a large amount of data where the goal is to see patterns. In our example above,
+the observable pattern is that all the variables highly correlate with each other. 
+
+```{r}
+#Correlation Matrix
+store_data <- select(CFM_data,c('store_sales.in.millions.','store_cost.in.millions.','unit_sales.in.millions.','total_children','avg_cars_at.home.approx.','num_children_at_home','avg_cars_at.home.approx..1','SRP','gross_weight','net_weight','recyclable_package','low_fat','units_per_case','store_sqft','grocery_sqft','frozen_sqft','meat_sqft','coffee_bar','video_store','salad_bar','prepared_food','florist','cost'))
+#store_data
+cor_data <- cor(store_data)
+#head(cor_data)
+corrplot(cor_data,method="shade",tl.col = "black",title = "\n\n Correlation Plot Of Store Data",tl.srt=65,cl.length = 5,cl.align="l",tl.cex=0.95,  number.cex=0.8,col = colorRampPalette(c("yellow","lightblue","navyblue"))(100))
+
+```
+
+# Count Plot Promotion Name
+```{r}
+promotion_data <- CFM_data %>% select(promotion_name) %>% group_by(promotion_name)
+promo_count<-promotion_data %>% group_by(promotion_name) 
+ggplot(promo_count, aes(x=promotion_name),color=promotion_name) + geom_bar(fill = '#003366') + theme(axis.text.x = element_text(angle = 90))
+```
+
+# Pie Chat to Visualize the food_category in dataset
+
+```{r}
+food_cat <- CFM_data %>% select(food_category) %>% group_by(food_category)%>% count()
+food_cat<- arrange(food_cat)
+piepercent<- round(100*food_cat$n/sum(food_cat$n), 1)
+#pie(food_cat$n,piepercent)
+
+
+
+pie(food_cat$n, labels = food_cat$food_category, main = "Food Category pie chart",col = rainbow(length(food_cat$n)), radius = 1, cex = 0.6) 
+```
+
+# Observation:
+From the above pie chart most used food_category such as 
+1.Vegetables 
+2.Snack Foods
+3.Dairy these products we used in our daily life
+
+
+# To Visualize the promotion_names
+```{r}
+promotion_data <- CFM_data %>% select(promotion_name) %>% group_by(promotion_name)
+promo_count<-promotion_data %>% group_by(promotion_name) 
+#promo_count
+ggplot(promo_count, aes(x=promotion_name),color=promotion_name) + geom_bar(fill = '#003366') + theme(axis.text.x = element_text(angle = 90))
+
+```
+# Observations
+From the above graph we found out that the most sales promotors names are:
+1. Weekend Markdown
+2. Two Day sales
+3. Price Slashers
+
+# Visualize the Average yearly Income 
+
+```{r}
+avg_income_count <- CFM_data %>% select(avg..yearly_income) %>% group_by(avg..yearly_income) %>% arrange(avg..yearly_income) 
+order <- c("$10K - $30K","$30K - $50K","$50K - $70K","$70K - $90K","$90K - $110K","$110K - $130K","$130K - $150K","$150K +")
+#avg_income_count
+ggplot(avg_income_count,aes(avg..yearly_income)) + geom_bar() + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Average Yearly Income")
+
+```
+
+# Observation 
+We found out that the average yearly income of the customers is $30k - $50k.
+
+# To Visualize the Education with gender in the dataset 
+```{r}
+Ed_gender <- CFM_data %>% select(gender,education) %>% arrange(gender) %>% group_by(gender,education)
+#Ed_gender %>% count()
+ggplot(Ed_gender, aes(x=education,fill=education)) + geom_bar()+ theme(axis.text.x = element_text(angle = 90)) + facet_wrap(~gender) + ggtitle(("Gender distribution in \nEducation Qualification"))
+```
+
+# To Visualize occupation and brand_name divided among gender
+```{r}
+Ocp_gender <- CFM_data %>% select(gender,occupation)  %>% group_by(gender,occupation)
+#Ocp_gender %>% count()
+ggplot(Ocp_gender, aes(x=occupation,fill=occupation)) + geom_bar()+ theme(axis.text.x = element_text(angle = 90)) + facet_wrap(~gender) + ggtitle("Gender Distribution in Occupation")
+
+```
+
+# Observation
+
+For Male:
+1. Most male have the partial high school degree.
+2. Females with graduate degree are low in number.
+
+# Visualize the yearly income with member card
+Member card is the membership card that the customer owns.
+```{r}
+card_income <- CFM_data %>% select(member_card,avg..yearly_income) %>% group_by(member_card,avg..yearly_income)
+#card_income %>% count()
+ggplot(card_income, aes(x=avg..yearly_income,fill=member_card)) + geom_bar()+ theme(axis.text.x = element_text(angle = 90)) + ggtitle("Memebership distribution \n in different income ranges")
+```
+
+# Visualize the education with occupation
+```{r}
+ed_oc <- CFM_data %>% select(occupation,education) %>% group_by(occupation,education)
+#ed_oc %>% count()
+ggplot(ed_oc, aes(x=occupation,fill=education)) + geom_bar()+ theme(axis.text.x = element_text(angle = 90)) + scale_fill_hue(limits = c("Partial High School","High School Degree","Partial College","Bachelors Degree","Graduate Degree")) + ggtitle("occupation Vs Education")
+
+```
+
+# Visualize the average income with occupation
+```{r}
+Income_ocup <- CFM_data %>% select(avg..yearly_income,occupation) %>% group_by(occupation,avg..yearly_income)
+#Income_ocup %>% count()
+ggplot(Income_ocup,aes(x=avg..yearly_income,fill=occupation)) + geom_bar()+ theme(axis.text.x = element_text(angle = 90)) + ggtitle("Income Distribution and Occupation")
+
+```
+
+# Observation 
+
+1. Professional employee average earns around $50k +. 
+2. Skilled manual employee and manual employee earns $30k +.
+3. Management employee earns $30k +.
+4. Clerical employee earns $30k +.
+
+# Visualize the average yearly income with occupation
+```{r}
+Income_ocup <- CFM_data %>% select(avg..yearly_income,occupation) %>% group_by(occupation,avg..yearly_income)
+#Income_ocup %>% count()
+ggplot(Income_ocup,aes(x=avg..yearly_income,fill=occupation)) + geom_bar()+ theme(axis.text.x = element_text(angle = 90)) + ggtitle("Income Distribution and Occupation")
+
+```
+
+# Visualise store sales with the state the store is located.
+
+```{r}
+City_income <- CFM_data %>% select(store_city,store_sales.in.millions.) %>% group_by(store_city,store_sales.in.millions.)
+ggplot(City_income, aes(x=store_city),y=store_sales.in.millions.) + geom_bar()+ theme(axis.text.x = element_text(angle = 90))
+
+```
+
+
+# Visualize store type and the state it is located
+```{r}
+sales_type_rev <- tapply(CFM_data$store_sales.in.millions., CFM_data$store_type, FUN=sum)
+#sales_type_rev
+p <- barplot(tapply(CFM_data$store_sales.in.millions., CFM_data$store_type, FUN=sum),ylab="in Millions",main = "Store Sales in Differnt Store Types")
+
+```
+
+# Visualize store sales in each state
+```{r}
+sales_city <- CFM_data %>% select(store_city,store_sales.in.millions.)
+#sales_city
+sales_city_rev <- tapply(CFM_data$store_sales.in.millions.,CFM_data$store_city,FUN=sum)
+#sales_city_rev
+barplot(sales_city_rev,las=2,ylab="in Millions",xlab="city",main="Revenue state-wise")
+
+```
+
+## Density Distribution Plots
+
+A density plot represents how a numeric variable/feature is distributed across the data.They serve as a means to study the most common ranges in which the variable is occurring, along with observing data imbalance through representation of the concentration of each value. For our Food mart campaign cost analysis, density plots were generated with each consisting of FOUR main components/sub-plots:
+
+ - Density: Represented as a curvy, flowing filled aspect of the graph; drawn to represent probability distribution (or likelihood of occurrence)
+ - Histogram: Represented by Vertical bars, drawn to represent data distribution in a discrete form
+ - Rug Plot: Shown by the vertical bars at the floor of the graph; can be seen as a 'lesser histogram' that shows data distribution.
+ - Mean Line: Vertical dashed line; Cuts through the average value of the variable.
+
+### i. Distribution of cost
+```{r}
+ggplot(CFM_data, aes(x=cost)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green', binwidth = 1.5) +
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(cost)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Cost') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### ii. Distribution of Store sales
+```{r}
+ggplot(CFM_data, aes(x=store_sales.in.millions.)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green', binwidth = 1)+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(store_sales.in.millions.)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Store Sales (in millions)') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### iii. Distribution of Store Cost
+```{r}
+ggplot(CFM_data, aes(x=store_cost.in.millions.)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green', binwidth = 0.5)+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(store_cost.in.millions.)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Store Costs (in millions)') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+### iv. Distribution of Unit Product sales
+```{r}
+ggplot(CFM_data, aes(x=unit_sales.in.millions.)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green', bins = 20)+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(unit_sales.in.millions.)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Product Sales (in millions)') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+# v. Distribution of Total children
+```{r}
+ggplot(CFM_data, aes(x=total_children)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='yellow')+
+  geom_density(alpha=0.5, fill='red') +
+  geom_vline(aes(xintercept=mean(total_children)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Total Attending Children') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+# vi. Distribution of Average number of cars per household
+```{r}
+ggplot(CFM_data, aes(x=avg_cars_at.home.approx.)) +
+  geom_histogram(aes(y=..density..), color = 'light blue', fill='blue')+
+  geom_density(alpha=0.5, fill='magenta') +
+  geom_vline(aes(xintercept=mean(avg_cars_at.home.approx.)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Average number of cars owned at a household') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+# vii. Distribution of Number of children per family
+```{r}
+ggplot(CFM_data, aes(x=num_children_at_home)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='yellow')+
+  geom_density(alpha=0.5, fill='orange') +
+  geom_vline(aes(xintercept=mean(num_children_at_home)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Number of children in a household') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+# viii. Distribution of average approximation of cars at home
+```{r}
+ggplot(CFM_data, aes(x=avg_cars_at.home.approx..1)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(avg_cars_at.home.approx..1)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Approximated number of cars owned at a household') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+# ix. Distribution of Suggested Retail Price
+```{r}
+ggplot(CFM_data, aes(x=SRP)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(SRP)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Suggested Retail Price') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+# x. Distribution of Gross weight
+```{r}
+ggplot(CFM_data, aes(x=gross_weight)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='orange')+
+  geom_density(alpha=0.5, fill='light blue') +
+  geom_vline(aes(xintercept=mean(gross_weight)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Gross Weight') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+# xi. Distribution of net weight
+```{r}
+ggplot(CFM_data, aes(x=net_weight)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='orange')+
+  geom_density(alpha=0.5, fill='light blue') +
+  geom_vline(aes(xintercept=mean(net_weight)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Net Weight') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+# xii. Distribution of recyclable/non-recyclable package
+This feature is categorical, representing whether is product is recyclable (1) or not (0).
+```{r}
+ggplot(CFM_data, aes(x=recyclable_package)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(recyclable_package)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of Recyclable/Non-Recyclable Package') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+### xii. Distribution of Low fat/Non-low fat products
+Another categorical variable represented in binary format (1 and 0)
+
+```{r}
+ggplot(CFM_data, aes(x=low_fat)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green', binwidth = 0.25)+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(low_fat)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of low_fat') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### xiii. Distribution of Units per Case
+
+```{r}
+ggplot(CFM_data, aes(x=units_per_case)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green', binwidth=0.75)+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(units_per_case)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of units_per_case') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### xiv. Distribution of Area of each Store (sq.ft)
+
+```{r}
+ggplot(CFM_data, aes(x=store_sqft)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(store_sqft)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of store_sqft') +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+### xv. Distribution of Area of each Store's grocery section 
+```{r}
+ggplot(CFM_data, aes(x=grocery_sqft)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(grocery_sqft)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of grocery_sqft') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### xvi. Distribution of Area of each store's Frozen Section
+
+```{r}
+ggplot(CFM_data, aes(x=frozen_sqft)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(frozen_sqft)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of frozen_sqft') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### xvii. Distribution of Area of each store's Meat Section
+```{r}
+ggplot(CFM_data, aes(x=meat_sqft)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green', bins=25)+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(meat_sqft)), color="blue",
+             linetype="longdash") + geom_rug() +
+  ggtitle('Data Distribution vs Probability Density Distribution of meat_sqft') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### xviii. Distribution of Coffee Bars availability
+Represented as a categorical, binary variable. (1 if available, 0 if not)
+```{r}
+ggplot(CFM_data, aes(x=coffee_bar)) + 
+  geom_histogram(aes(y=..density..), color = 'red', fill='green') +
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(coffee_bar)), color="blue",linetype="longdash") +
+  ggtitle('Data Distribution vs Probability Density Distribution of coffee_bar') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### xix. Distribution of Availability of video stores
+Represented as a categorical variable
+```{r}
+ggplot(CFM_data, aes(x=video_store)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(video_store)), color="blue",linetype="longdash") +
+  ggtitle('Data Distribution vs Probability Density Distribution of video_store') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### xx. Distribution of Availability of Salad bar
+Represented as categorical variable
+```{r}
+ggplot(CFM_data, aes(x=salad_bar)) +
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(salad_bar)), color="blue",linetype="longdash")+
+  ggtitle('Data Distribution vs Probability Density Distribution of salad_bar') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### xxi. Distribution of Availability of Prepared Food
+```{r}
+ggplot(CFM_data, aes(x=prepared_food)) + 
+  geom_histogram(aes(y=..density..), color = 'red', fill='green')+
+  geom_density(alpha=0.5, fill='dark green') +
+  geom_vline(aes(xintercept=mean(prepared_food)), color="blue", linetype="longdash") +
+  ggtitle('Data Distribution vs Probability Density Distribution of prepared_food') +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Plotting the relationship between Variable Pairs
+As in most real-world scenarios, variables usually have some influence or correlation with one another in pairs, which can be represented through various visual plots.
+### i. Relationship between Store Sales and Store Cost
+A violin plot is another way to showcase probability distribution. The thicker the sides of the plot, the more likely the variable will be a specific value.
+
+```{r}
+#store_sales.in.millions and store_cost.in.millions
+ggplot(CFM_data, aes(x=store_sales.in.millions., y=store_cost.in.millions.))+
+  ggtitle("Violin plot for store_sales.in.millions and store_cost.in.millions") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_violin(color='black' , fill = 'blue') 
+```
+
+### ii. Meat Section area and Frozen Section Area
+An almost perfect positive relationship is shown on the plot.
+Possible Explaination: Prepared meat is usually stored frozen and is therefore a subset of frozen foods, possibly explaining the correlation.
+```{r}
+dataB <- CFM_data[, c( "meat_sqft", "frozen_sqft")]
+
+p <- ggplot(dataB, aes(meat_sqft, frozen_sqft))
+p + geom_point()
+# Add aesthetic mappings
+p + geom_point(colour = "red", size = 3) + ggtitle("Relationship between meat area and frozen area in the mart")
+```
+
+### iii. Total Store area and Grocery Section Area
+A semi-strong positive relationship is indicated by the plot.
+Possible Explanation: A bigger store can allow for a bigger grocery section, which is usually the most popular aspect of supermarkets, and food mart by extension.
+```{r}
+dataC <- CFM_data[, c( "store_sqft", "grocery_sqft")]
+q <- ggplot(dataC, aes(store_sqft, grocery_sqft))
+q + geom_point(colour = "red", size = 3) + ggtitle("Relationship between store area and grocery area in the mart")
+```
+
+### iii. Gross Weight and Net Weight
+The plot indicates a strong positive, nearly directly proportional relationship.
+Possible Explanation: Since gross weight is the net weight of the shipped products + weight of packaging, a directly proportional relationship makes sense.
+```{r}
+dataD <- CFM_data[, c( "gross_weight", "net_weight")]
+q <- ggplot(dataD, aes(gross_weight, net_weight))
+q + geom_point(colour = "red", size = 3) + ggtitle("Relationship between gross weight and net weight in the mart")
+```
+
+### iv. Gross Weight and Units per Case
+The scattered points indicate no relationship.
+Possible Explanation: Some products like TVs, large electronics, etc. could only consist of few units that weight heavily, and vice versa.
+```{r}
+dataE <- CFM_data[, c( "gross_weight", "units_per_case")]
+q <- ggplot(dataE, aes(gross_weight, units_per_case))
+q + geom_point(colour = "red", size = 3) + ggtitle("Relationship between gross weight and units per case in the mart")
+```

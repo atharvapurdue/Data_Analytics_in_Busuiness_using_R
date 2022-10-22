@@ -1,5 +1,5 @@
 # importing data
-CFM_data <- read.csv("media prediction and its cost.csv")
+CFM_data <- read.csv("data.csv")
 
 
 # checking the top  columns in each rows

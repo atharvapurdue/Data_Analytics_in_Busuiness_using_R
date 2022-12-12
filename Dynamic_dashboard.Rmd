@@ -1,0 +1,299 @@
+---
+title: "CFM"
+output: flexdashboard::flex_dashboard
+---
+```{r}
+library(flexdashboard)
+library(shiny)
+library(dplyr)
+library(plotly)
+library(tidyverse)
+library(tidyr)
+library(ggplot2)
+library(corrplot)
+library(MASS)
+library(xgboost)
+library(caret)
+library(CatEncoders)
+library(splitTools)
+library(ranger)
+```
+
+```{r data}
+CFM_data <- read.csv("C:/Users/bssup/Documents/fall22/R/project/Food_mart/data.csv")
+
+transformed_data = CFM_data
+#define original categorical labels
+label = LabelEncoder.fit(CFM_data$food_category)
+transformed_data$food_category = transform(label, CFM_data$food_category)
+
+label = LabelEncoder.fit(CFM_data$food_department)
+transformed_data$food_department = transform(label, CFM_data$food_department)
+
+label = LabelEncoder.fit(CFM_data$food_family)
+transformed_data$food_family = transform(label, CFM_data$food_family)
+
+label = LabelEncoder.fit(CFM_data$promotion_name)
+transformed_data$promotion_name = transform(label, CFM_data$promotion_name)
+
+label = LabelEncoder.fit(CFM_data$marital_status)
+transformed_data$marital_status = transform(label, CFM_data$marital_status)
+
+label = LabelEncoder.fit(CFM_data$gender)
+transformed_data$gender = transform(label, CFM_data$gender)
+
+label = LabelEncoder.fit(CFM_data$education)
+transformed_data$education = transform(label, CFM_data$education)
+
+label = LabelEncoder.fit(CFM_data$member_card)
+transformed_data$member_card = transform(label, CFM_data$member_card)
+
+label = LabelEncoder.fit(CFM_data$occupation)
+transformed_data$occupation = transform(label, CFM_data$occupation)
+
+label = LabelEncoder.fit(CFM_data$avg..yearly_income)
+transformed_data$avg..yearly_income = transform(label, CFM_data$avg..yearly_income)
+
+label = LabelEncoder.fit(CFM_data$sales_country)
+transformed_data$sales_country = transform(label, CFM_data$sales_country)
+
+label = LabelEncoder.fit(CFM_data$brand_name)
+transformed_data$brand_name = transform(label, CFM_data$brand_name)
+
+label = LabelEncoder.fit(CFM_data$houseowner)
+transformed_data$houseowner = transform(label, CFM_data$houseowner)
+
+label = LabelEncoder.fit(CFM_data$store_type)
+transformed_data$store_type = transform(label, CFM_data$store_type)
+
+label = LabelEncoder.fit(CFM_data$store_city)
+transformed_data$store_city = transform(label, CFM_data$store_city)
+
+label = LabelEncoder.fit(CFM_data$store_state)
+transformed_data$store_state = transform(label, CFM_data$store_state)
+
+label = LabelEncoder.fit(CFM_data$media_type)
+transformed_data$media_type = transform(label, CFM_data$media_type)
+
+
+#split the data 
+
+
+# Split data into partitions
+set.seed(3451)
+inds <- partition(transformed_data$food_category, p = c(train = 0.7, valid = 0.2, test = 0.1))
+#str(inds)
+#> List of 3
+#>  $ train: int [1:81] 2 3 6 7 8 10 11 18 19 20 ...
+#>  $ valid: int [1:34] 1 12 14 15 27 34 36 38 42 48 ...
+#>  $ test : int [1:35] 4 5 9 13 16 17 25 39 41 45 ...
+
+train <- transformed_data[inds$train, ]
+X_train=dplyr::select(train,-cost)
+y_train=train$cost
+
+valid <- transformed_data[inds$valid, ]
+X_valid=dplyr::select(valid,-cost)
+y_valid=valid$cost
+
+
+test <- transformed_data[inds$test, ]
+X_test=dplyr::select(test,-cost)
+y_test=test$cost
+```
+
+Question 1{data-orientation=rows}
+=====================================  
+### What is the average income of the customers who shop at CFM?
+Column {}
+-------------------------------------
+    
+```{r}
+avg_income_count <- CFM_data %>% dplyr::select(avg..yearly_income) %>% group_by(avg..yearly_income) %>% arrange(avg..yearly_income) 
+order <- c("$10K - $30K","$30K - $50K","$50K - $70K","$70K - $90K","$90K - $110K","$110K - $130K","$130K - $150K","$150K +")
+
+ggplot(avg_income_count,aes(avg..yearly_income)) + geom_bar() + theme(axis.text.x = element_text(angle = 0)) + ggtitle("Average Yearly Income")
+```
+
+Question 2 {data-orientation=rows}
+=====================================   
+### What is the Education distribution trend between the male and the female customers ?
+  Column {}
+-------------------------------------
+```{r}
+Ed_gender <- CFM_data %>% dplyr::select(gender,education) %>% arrange(gender) %>% group_by(gender,education)
+#Ed_gender %>% count()
+ggplot(Ed_gender, aes(x=education,fill=education)) + geom_bar()+ theme(axis.text.x = element_text(angle = 90)) + facet_wrap(~gender) + ggtitle(("Gender distribution in \nEducation Qualification"))
+``` 
+
+ Question 3 {data-orientation=rows}
+=====================================   
+### Membership distribution in different income ranges?
+  Column {}
+-------------------------------------
+```{r}
+card_income <- CFM_data %>% dplyr::select(member_card,avg..yearly_income) %>% group_by(member_card,avg..yearly_income)
+#card_income %>% count()
+ggplot(card_income, aes(x=avg..yearly_income,fill=member_card)) + geom_bar()+ theme(axis.text.x = element_text(angle = 0)) + ggtitle("Memebership distribution \n in different income ranges")
+```
+
+
+Question 4 {data-orientation=rows}
+=====================================  
+### What are the top 3 promotional taglines that make the most sales for CFM?
+Column {}
+-------------------------------------
+   
+
+```{r}
+promotion_data <- CFM_data %>% dplyr::select(promotion_name) %>% group_by(promotion_name)
+promo_count<-promotion_data %>% group_by(promotion_name) 
+#promo_count
+ggplot(promo_count, aes(x=promotion_name),color=promotion_name) + geom_bar(fill = '#003366') + theme(axis.text.x = element_text(angle = 90))
+```   
+
+Question 5 {data-orientation=rows}
+===================================== 
+### Are there any brand preferences for customers with different occupations?
+column {}
+-------------------------------------
+    
+```{r fig.height=5, fig.width=15}
+
+    brand_ocp <- CFM_data %>% dplyr::select(occupation,brand_name) %>% group_by(occupation)
+    ggplot(brand_ocp, aes(x=occupation,fill=brand_name)) + geom_bar() + ggtitle("Band's favored by different Occupation")
+```
+
+Question 6 {data-orientation=rows}
+===================================== 
+### Which type of store is most profitable for CFM?
+Column {}
+-------------------------------------
+```{r}
+sales_type_rev <- tapply(CFM_data$store_sales.in.millions., CFM_data$store_type, FUN=sum)
+#sales_type_rev
+p <- barplot(tapply(CFM_data$store_sales.in.millions., CFM_data$store_type, FUN=sum),ylab="in Millions",main = "Store Sales in Differnt Store Types")
+```
+
+Question 7 {data-orientation=rows}
+===================================== 
+### Which state is most and least profitable for CFM?
+Column {}
+-------------------------------------
+```{r}
+sales_city <- CFM_data %>% dplyr::select(store_city,store_sales.in.millions.)
+#sales_city
+sales_city_rev <- tapply(CFM_data$store_sales.in.millions.,CFM_data$store_city,FUN=sum)
+#sales_city_rev
+barplot(sales_city_rev,las=2,ylab="in Millions",main="Revenue state-wise")
+```
+
+Question (8)a {data-orientation=rows}
+===================================== 
+### Predicting the media campaign cost for Convenient Food Mart (CFM).
+
+column {}
+-------------------------------------
+```{r}
+#XGBRegressor
+
+
+dtrain <- xgb.DMatrix(data = as.matrix(X_train), label = y_train)
+dtest <- xgb.DMatrix(data = as.matrix(X_test), label = y_test)
+# Instantiate the model
+model <- xgboost(data = dtrain, # the data   
+                 nround = 350, # max number of boosting iterations)
+                    max.depth = 5
+                 )
+```
+column {}
+-------------------------------------
+```{r message=FALSE, warning=FALSE}
+# Fit the model to the data
+pred <- predict(model, dtest)
+mse = mean((y_test - pred)^2)
+mae = caret::MAE(y_test, pred)
+rmse = caret::RMSE(y_test, pred)
+cat("MSE: ", mse, "\nMAE: ", mae, "\nRMSE: ", rmse)
+postResample(y_test,pred)
+
+df = data.frame(y_test, pred)
+df$id = 1:nrow(df)
+```
+Row {}
+-------------------------------------
+```{r}
+ggplot() + geom_point(data = df, aes(x = id, y = y_test, color = 'y_test')) + 
+  geom_point(data = df, aes(x=id, y = pred, color = 'pred',)) +
+  theme(plot.title = element_text(hjust = 0.5)) + scale_x_continuous(breaks = seq(0, 6000, by = 500))+
+  ylab('Cost')
+#confusion_mat = as.matrix(table(Actual_Values = y_test, Predicted_Values = pred)) 
+#confusion_mat
+importance_matrix = xgb.importance(colnames(dtrain), model = model)
+xgb.plot.multi.trees(feature_names = names(CFM_data), 
+                     model = model)
+```
+Question 8(b) {data-orientation=rows}
+===================================== 
+### Predicting the media campaign cost for Convenient Food Mart (CFM).
+column {}
+-------------------------------------
+```{r message=FALSE, warning=FALSE}
+#LGBMRegressor
+library(lightgbm)
+library(caret)
+library(ggplot2) 
+library(stats)
+
+dtrain = lgb.Dataset(as.matrix(X_train), label = y_train)
+
+dtest = lgb.Dataset.create.valid(dtrain,as.matrix(X_test), label = y_test)
+
+#dvalid = lgb.Dataset.create.valid(dtrain,as.matrix(X_valid),label = y_valid)
+set.seed(123)
+valids = list(test = dtest)
+model <- lgb.train(
+  params = list(
+    objective = "regression"
+  , metric = "l2"
+  , min_data = 1L
+  , learning_rate = .3
+  , nrounds = 10L
+  ), 
+  valids = list(test = dtest),
+  data = dtrain
+)
+
+
+#model = lightgbm(boosting_type = 'gbdt', objective = "regression", metric = 'mae', dtrain, nrounds = 500) 
+pred <- predict(model,dat = as.matrix(X_test))
+```
+column {}
+-------------------------------------
+```{r}
+mse = mean((y_test - pred)^2)
+mae = caret::MAE(y_test, pred)
+rmse = caret::RMSE(y_test, pred)
+
+cat("MSE: ", mse, "\nMAE: ", mae, "\nRMSE: ", rmse)
+postResample(y_test,pred)
+
+df = data.frame(y_test, pred)
+df$id = 1:nrow(df)
+options(repr.plot.width = 20, repr.plot.height =2)
+```
+Row {}
+-------------------------------------
+```{r}
+ggplot() + geom_point(data = df, aes(x = id, y = y_test, color = 'y_test')) + 
+  geom_point(data = df, aes(x=id, y = pred, color = 'pred')) + scale_x_continuous(breaks = seq(0, 6000, by = 500))+
+  theme(plot.title = element_text(hjust = 0.5)) +
+  ylab('Cost')
+
+# feature importance
+tree_imp = lgb.importance(model, percentage = TRUE)
+lgb.plot.importance(tree_imp, top_n = 10L, measure = "Gain")
+  #GAIN COVER Frequency 
+```
+   
+ 
